@@ -1,55 +1,21 @@
-import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, Button, FlatList } from 'react-native';
-import * as Contacts from 'expo-contacts';
+import React, { useState } from 'react';
+import { View, StyleSheet, Button, TextInput } from 'react-native';
+import * as Speech from 'expo-speech';
 
 export default function App() {
-  const [hasPermission, setHasPermission] = useState(null);
-  const [contacts, setContacts] = useState([]);
-  const [contactList, setContactList] = useState([]);
-
-  useEffect(() => {
-    getContacts();
-  }, []);
-
-  const getContacts = async () => {
-    const { status } = await Contacts.requestPermissionsAsync();
-    setHasPermission(status === 'granted');
-
-    if (status === 'granted') {
-      const { data } = await Contacts.getContactsAsync({
-        fields: [Contacts.Fields.PhoneNumbers]
-      })
-      setContacts(data);
-    }
-  }
-
-  const getContactList = () => {
-    setContactList(contacts)
-  }
+  
+  const [message, setMessage] = useState('');
+  
+  const speak = () => {
+    const thingToSay = message;
+    Speech.speak(thingToSay);
+  };
 
   return (
-
-    <View style={styles.container} >
-      <StatusBar style="auto" />
-      {
-        hasPermission ? (
-          <View>
-            <FlatList 
-              keyExtractor={(item) => item.id}
-              data={contactList}
-              renderItem={({ item }) => 
-                <View>
-                  <Text>{item.name} {item.phoneNumbers[0].number}</Text>
-                </View>
-              }
-              />
-            <Button title="Set Contacts" onPress={getContactList} />
-          </View>
-        ) : (
-            <Text>No permission to use Contacts</Text>
-          )
-      }
+    <View style={styles.container}>
+    <TextInput style={styles.input} placeholder='Write your message' 
+        onChangeText={text => setMessage(text)} />
+      <Button title="Press to hear text" onPress={speak} />
     </View>
   );
 }
@@ -60,5 +26,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  input: {
+    height: 40,
+    margin: 12,
+    borderWidth: 1,
+    padding: 10,
   },
 });

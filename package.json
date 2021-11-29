@@ -19,7 +19,8 @@
     "expo-sqlite": "~10.0.3",
     "expo-camera": "~12.0.3",
     "expo-contacts": "~10.0.3",
-    "expo-sms": "~10.0.3"
+    "expo-sms": "~10.0.3",
+    "expo-speech": "~10.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9"
