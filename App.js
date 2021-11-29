@@ -1,92 +1,64 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, TextInput, View, Button, FlatList } from 'react-native';
-import * as SQLite from 'expo-sqlite';
-
-const db = SQLite.openDatabase('coursedb.db');
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, Button, FlatList } from 'react-native';
+import * as Contacts from 'expo-contacts';
 
 export default function App() {
-  const [amount, setAmount] = useState('');
-  const [product, setProduct] = useState('');
-  const [shoppinglist, setShoppinglist] = useState([]);
+  const [hasPermission, setHasPermission] = useState(null);
+  const [contacts, setContacts] = useState([]);
+  const [contactList, setContactList] = useState([]);
 
   useEffect(() => {
-    db.transaction(tx => {
-      tx.executeSql('create table if not exists shoppingitem (id integer primary key not null, amount text, product text);');
-    });
-    updateList();    
+    getContacts();
   }, []);
 
-  // Save shoppingitem
-  const saveItem = () => {
-    db.transaction(tx => {
-        tx.executeSql('insert into shoppingitem (amount, product) values (?, ?);', [amount, product]);    
-      }, null, updateList
-    )
+  const getContacts = async () => {
+    const { status } = await Contacts.requestPermissionsAsync();
+    setHasPermission(status === 'granted');
+
+    if (status === 'granted') {
+      const { data } = await Contacts.getContactsAsync({
+        fields: [Contacts.Fields.PhoneNumbers]
+      })
+      setContacts(data);
+    }
   }
 
-  // Update shoppingitem
-  const updateList = () => {
-    db.transaction(tx => {
-      tx.executeSql('select * from shoppingitem;', [], (_, { rows }) =>
-        setShoppinglist(rows._array)
-      ); 
-    });
+  const getContactList = () => {
+    setContactList(contacts)
   }
-
-  // Delete shoppingitem
-  const deleteItem = (id) => {
-    db.transaction(
-      tx => {
-        tx.executeSql(`delete from shoppingitem where id = ?;`, [id]);
-      }, null, updateList
-    )    
-  }
-
-  const listSeparator = () => {
-    return (
-      <View
-        style={{
-          height: 5,
-          width: "80%",
-          backgroundColor: "#fff",
-          marginLeft: "10%"
-        }}
-      />
-    );
-  };
 
   return (
-    <View style={styles.container}>
-      <TextInput placeholder='Product' style={{marginTop: 30, fontSize: 18, width: 200, borderColor: 'gray', borderWidth: 1}}
-        onChangeText={(product) => setProduct(product)}
-        value={product}/>  
-      <TextInput placeholder='Amount' style={{ marginTop: 5, marginBottom: 5,  fontSize:18, width: 200, borderColor: 'gray', borderWidth: 1}}
-        onChangeText={(amount) => setAmount(amount)}
-        value={amount}/>      
-      <Button onPress={saveItem} title="Save" /> 
-      <Text style={{marginTop: 30, fontSize: 20}}>Shopping list</Text>
-      <FlatList 
-        style={{marginLeft : "5%"}}
-        keyExtractor={item => item.id.toString()} 
-        renderItem={({item}) => <View style={styles.listcontainer}><Text style={{fontSize: 18}}>{item.product}, {item.amount}</Text>
-        <Text style={{fontSize: 18, color: '#0000ff'}} onPress={() => deleteItem(item.id)}> bought</Text></View>} 
-        data={shoppinglist} 
-        ItemSeparatorComponent={listSeparator} 
-      />      
+
+    <View style={styles.container} >
+      <StatusBar style="auto" />
+      {
+        hasPermission ? (
+          <View>
+            <FlatList 
+              keyExtractor={(item) => item.id}
+              data={contactList}
+              renderItem={({ item }) => 
+                <View>
+                  <Text>{item.name} {item.phoneNumbers[0].number}</Text>
+                </View>
+              }
+              />
+            <Button title="Set Contacts" onPress={getContactList} />
+          </View>
+        ) : (
+            <Text>No permission to use Contacts</Text>
+          )
+      }
     </View>
   );
 }
 
 const styles = StyleSheet.create({
- container: {
-  flex: 1,
-  backgroundColor: '#fff',
-  alignItems: 'center',
-  justifyContent: 'center',
- },
- listcontainer: {
-  flexDirection: 'row',
-  backgroundColor: '#fff',
-  alignItems: 'center'
- },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
